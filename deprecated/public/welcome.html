@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to Library</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+    }
+
+    .nav {
+      background-color: #333;
+      padding: 1rem;
+      color: white;
+    }
+
+    .nav-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: white;
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .nav-link {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+    }
+
+    .nav-link:hover {
+      background-color: #444;
+    }
+
+    .nav-link.active {
+      background-color: #555;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      text-align: center;
+    }
+
+    .welcome-box {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-top: 2rem;
+    }
+
+    .error {
+      color: #d93025;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <nav class="nav">
+      <div class="nav-content">
+        <a href="/welcome" class="nav-brand">Library</a>
+        <div class="nav-links">
+          <a href="/welcome" class="nav-link active">Home</a>
+          <a href="/books" class="nav-link">Books</a>
+          <a href="/cart" class="nav-link active">Cart ({{ cartCount }})</a>
+          <a href="#" class="nav-link" @click="logout">Logout</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="welcome-box">
+        <h2>Welcome to the Library!</h2>
+        <p>You are logged in as: {{ username }}</p>
+        <button @click="logout">Logout</button>
+        <div v-if="error" class="error">{{ error }}</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          username: '',
+          error: ''
+        };
+      },
+      async mounted() {
+        await this.loadCartCount();
+        try {
+          const response = await fetch('/api/user');
+          const data = await response.json();
+          if (response.ok) {
+            this.username = data.username;
+          } else {
+            window.location.href = '/';
+          }
+        } catch (error) {
+          this.error = 'Error loading user data';
+        }
+      },
+      methods: {
+        async logout() {
+          try {
+            const response = await fetch('/logout', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (response.ok) {
+              window.location.href = '/';
+            } else {
+              this.error = 'Error logging out';
+            }
+          } catch (error) {
+            this.error = 'Error logging out';
+          }
+        },
+        async loadCartCount() {
+          try {
+            const response = await fetch('/api/cart/count');
+            if (response.ok) {
+              const data = await response.json();
+              this.cartCount = data.count;
+            }
+          } catch (error) {
+            console.error('Error loading cart count:', error);
+          }
+        },
+      }
+    }).mount('#app');
+  </script>
+</body>
+
+</html>

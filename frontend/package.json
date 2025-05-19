@@ -1,0 +1,12 @@
+{
+  "name": "express-auth-frontend",
+  "version": "1.0.0",
+  "description": "Frontend service for Express authentication app",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  }
+}
