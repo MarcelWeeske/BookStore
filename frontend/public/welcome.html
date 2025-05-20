@@ -114,7 +114,7 @@
       async mounted() {
         await this.loadCartCount();
         try {
-          const response = await fetch('http://localhost:3000/api/user', {
+          const response = await fetch('/api/user', {
             credentials: 'include'
           });
           const data = await response.json();
@@ -131,7 +131,7 @@
       methods: {
         async logout() {
           try {
-            const response = await fetch('http://localhost:3000/api/logout', {
+            const response = await fetch('/api/logout', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -150,7 +150,7 @@
         },
         async loadCartCount() {
           try {
-            const response = await fetch('http://localhost:3000/api/cart/count', {
+            const response = await fetch('/api/cart/count', {
               credentials: 'include'
             });
             if (response.ok) {

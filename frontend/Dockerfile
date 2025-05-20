@@ -1,13 +1,11 @@
-FROM node:18-alpine
+FROM nginx:alpine
 
-WORKDIR /app
+# Copy static files
+COPY public /usr/share/nginx/html
 
-COPY package*.json ./
+# Copy nginx configuration for static file serving
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-RUN npm install
+EXPOSE 80
 
-COPY . .
-
-EXPOSE 3001
-
-CMD ["npm", "start"] 
+CMD ["nginx", "-g", "daemon off;"] 

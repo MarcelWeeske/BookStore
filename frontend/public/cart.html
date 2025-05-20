@@ -172,7 +172,7 @@
       methods: {
         async loadCart() {
           try {
-            const response = await fetch('http://localhost:3000/api/cart', {
+            const response = await fetch('/api/cart', {
               credentials: 'include'
             });
             if (response.ok) {
@@ -188,7 +188,7 @@
         },
         async loadCartCount() {
           try {
-            const response = await fetch('http://localhost:3000/api/cart/count', {
+            const response = await fetch('/api/cart/count', {
               credentials: 'include'
             });
             if (response.ok) {
@@ -201,7 +201,7 @@
         },
         async removeFromCart(book) {
           try {
-            const response = await fetch('http://localhost:3000/api/cart/remove', {
+            const response = await fetch('/api/cart/remove', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -222,7 +222,7 @@
         },
         async logout() {
           try {
-            const response = await fetch('http://localhost:3000/api/logout', {
+            const response = await fetch('/api/logout', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
