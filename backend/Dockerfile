@@ -8,6 +8,11 @@ RUN npm install
 
 COPY . .
 
+# Create logs directory
+RUN mkdir -p logs
+
+# Expose the port
 EXPOSE 3000
 
-CMD ["npm", "start"] 
+# Start the application with PM2
+CMD ["npm", "run", "pm2:start"] 

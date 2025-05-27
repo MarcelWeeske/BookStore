@@ -8,6 +8,7 @@ const path = require("path");
 const csv = require("csv-parse");
 const { Pool } = require("pg");
 const cors = require("cors");
+const { register, httpRequestDurationMicroseconds, httpRequestsTotal, activeUsers, databaseQueryDuration } = require('./metrics');
 
 const app = express();
 const port = 3000;
@@ -15,20 +16,25 @@ const port = 3000;
 // Middleware
 app.use(express.json());
 
-// Session logging middleware
+// Metrics endpoint
+app.get('/metrics', async (req, res) => {
+    res.set('Content-Type', register.contentType);
+    res.end(await register.metrics());
+});
+
+// Metrics middleware
 app.use((req, res, next) => {
-  const oldEnd = res.end;
-  res.end = function () {
-    console.log("\n=== Session Log ===");
-    console.log("Time:", new Date().toISOString());
-    console.log("Method:", req.method);
-    console.log("Path:", req.path);
-    console.log("Session ID:", req.sessionID);
-    console.log("Session Data:", req.session);
-    console.log("==================\n");
-    oldEnd.apply(res, arguments);
-  };
-  next();
+    const start = Date.now();
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        httpRequestDurationMicroseconds
+            .labels(req.method, req.route?.path || req.path, res.statusCode.toString())
+            .observe(duration / 1000);
+        httpRequestsTotal
+            .labels(req.method, req.route?.path || req.path, res.statusCode.toString())
+            .inc();
+    });
+    next();
 });
 
 app.use(
@@ -291,40 +297,44 @@ app.post("/api/register", async (req, res) => {
 });
 
 app.post("/api/login", async (req, res) => {
-  const { username, password } = req.body;
-
   try {
-    const result = await pool.query("SELECT * FROM users WHERE username = $1", [
-      username,
-    ]);
-    const user = result.rows[0];
+    const { username, password } = req.body;
+    const result = await pool.query(
+      "SELECT * FROM users WHERE username = $1",
+      [username]
+    );
 
-    if (!user) {
-      return res.status(401).json({ error: "Invalid credentials" });
+    if (result.rows.length > 0) {
+      const validPassword = await bcrypt.compare(
+        password,
+        result.rows[0].password
+      );
+      if (validPassword) {
+        req.session.user = {
+          id: result.rows[0].id,
+          username: result.rows[0].username,
+        };
+        activeUsers.inc(); // Increment active users
+        res.json({ message: "Logged in successfully" });
+      } else {
+        res.status(401).json({ error: "Invalid password" });
+      }
+    } else {
+      res.status(401).json({ error: "User not found" });
     }
-
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
-    req.session.user = {
-      id: user.id,
-      username: user.username,
-    };
-
-    res.json({ success: true, username: user.username });
   } catch (err) {
-    res.status(500).json({ error: "Database error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
 app.post("/api/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
-      return res.status(500).json({ error: "Error logging out" });
+      res.status(500).json({ error: err.message });
+    } else {
+      activeUsers.dec(); // Decrement active users
+      res.json({ message: "Logged out successfully" });
     }
-    res.json({ success: true });
   });
 });
 
